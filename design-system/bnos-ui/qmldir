@@ -1,0 +1,13 @@
+module BNOS.UI
+singleton Theme 1.0 Theme.qml
+BButton 1.0 BButton.qml
+BInput 1.0 BInput.qml
+BCard 1.0 BCard.qml
+BSwitch 1.0 BSwitch.qml
+BCheckbox 1.0 BCheckbox.qml
+BBadge 1.0 BBadge.qml
+BTabs 1.0 BTabs.qml
+BIcon 1.0 BIcon.qml
+BDialog 1.0 BDialog.qml
+BToast 1.0 BToast.qml
+BSeparator 1.0 BSeparator.qml

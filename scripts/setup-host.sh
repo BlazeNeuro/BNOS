@@ -22,7 +22,11 @@ apt-get install -y \
     syslinux-common \
     mtools \
     debian-archive-keyring \
-    rsync
+    rsync \
+    cmake \
+    g++ \
+    qt6-base-dev \
+    qt6-declarative-dev
 
 # VM testing tools
 apt-get install -y \
