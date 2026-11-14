@@ -1,0 +1,38 @@
+# live-build output
+distribution/.build/
+distribution/binary/
+distribution/cache/
+distribution/chroot/
+distribution/chroot.packages.*
+distribution/config/binary
+distribution/config/bootstrap
+distribution/config/chroot
+distribution/config/common
+distribution/config/source
+distribution/*.iso
+distribution/*.hybrid.iso
+distribution/*.contents
+distribution/*.files
+distribution/*.packages
+distribution/build.log
+
+# SSD build area (local only)
+/media/
+
+# QEMU disk images
+*.qcow2
+*.img
+
+# Build output
+build/
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,45 @@
+# BNOS Base System Packages
+# These are installed into the live system chroot
+
+# --- Live system essentials ---
+live-boot
+live-config
+live-config-systemd
+
+# --- Core system ---
+systemd
+dbus
+sudo
+locales
+console-setup
+keyboard-configuration
+
+# --- Networking ---
+network-manager
+wpasupplicant
+iproute2
+iputils-ping
+curl
+wget
+
+# --- Audio ---
+pipewire
+pipewire-pulse
+wireplumber
+
+# --- Firmware (non-free) ---
+firmware-linux-free
+firmware-misc-nonfree
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+
+# --- Utilities ---
+bash-completion
+file
+less
+nano
+htop
+neofetch
+usbutils
+pciutils

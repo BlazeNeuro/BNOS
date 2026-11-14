@@ -1,0 +1,30 @@
+# BNOS Desktop Session (Temporary - Step 1)
+# Replaced by bnos-shell + bnos-compositor in Step 3
+
+# --- Display server / compositor ---
+labwc
+xwayland
+wlr-randr
+
+# --- Session / login manager ---
+greetd
+greetd-agreety
+
+# --- Terminal ---
+foot
+
+# --- Basic GUI utilities ---
+thunar
+firefox-esr
+
+# --- Fonts ---
+fonts-inter
+fonts-noto
+fonts-noto-color-emoji
+
+# --- Mesa / GPU ---
+mesa-utils
+mesa-vulkan-drivers
+
+# --- GTK / theme (for third-party apps) ---
+adwaita-icon-theme

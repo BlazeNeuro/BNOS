@@ -1,0 +1,110 @@
+name: Build BNOS ISO
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    name: Build Live ISO
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            live-build \
+            debootstrap \
+            squashfs-tools \
+            xorriso \
+            isolinux \
+            syslinux-common \
+            mtools \
+            debian-archive-keyring \
+            ca-certificates \
+            rsync
+
+      - name: Configure live-build
+        working-directory: distribution
+        run: lb config
+
+      - name: Build ISO
+        working-directory: distribution
+        run: |
+          lb build 2>&1 | tee build.log
+          echo "--- Build complete ---"
+          ls -lh *.iso 2>/dev/null || echo "No ISO found"
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p output
+          cp distribution/*.iso output/ 2>/dev/null || \
+            cp distribution/*.hybrid.iso output/ 2>/dev/null || \
+            { echo "ERROR: No ISO produced"; tail -100 distribution/build.log; exit 1; }
+          # Generate checksum
+          cd output && sha256sum *.iso > SHA256SUMS
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bnos-live-iso
+          path: output/
+          retention-days: 30
+
+      - name: Upload build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: distribution/build.log
+          retention-days: 7
+
+  release:
+    name: Create Release
+    needs: build-iso
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download ISO artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bnos-live-iso
+          path: output/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            output/*.iso
+            output/SHA256SUMS
+          body: |
+            ## BNOS Live ISO
+
+            **Base:** Debian Trixie (Stable)
+            **Architecture:** amd64
+
+            ### Quick Test
+            ```bash
+            qemu-system-x86_64 -m 2G -cdrom bnos-*.iso -boot d
+            ```
+
+            ### Verify Checksum
+            ```bash
+            sha256sum -c SHA256SUMS
+            ```
+          draft: false
+          prerelease: true

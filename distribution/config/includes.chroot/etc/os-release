@@ -1,0 +1,12 @@
+PRETTY_NAME="BNOS 1.0 (Trixie)"
+NAME="BNOS"
+VERSION_ID="1.0"
+VERSION="1.0 (Trixie)"
+VERSION_CODENAME=trixie
+ID=bnos
+ID_LIKE=debian
+HOME_URL="https://blazeneuro.com"
+SUPPORT_URL="https://blazeneuro.com/support"
+BUG_REPORT_URL="https://github.com/blazeneuro/bnos/issues"
+PRIVACY_POLICY_URL="https://blazeneuro.com/privacy"
+LOGO=bnos-logo

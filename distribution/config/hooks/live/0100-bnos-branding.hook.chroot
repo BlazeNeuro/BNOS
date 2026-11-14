@@ -1,0 +1,55 @@
+#!/bin/sh
+set -e
+
+echo "BNOS: Applying branding..."
+
+# --- Configure greetd to launch labwc ---
+mkdir -p /etc/greetd
+cat > /etc/greetd/config.toml << 'GREETD_EOF'
+[terminal]
+vt = 7
+
+[default_session]
+command = "agreety --cmd /usr/local/bin/bnos-session"
+user = "greeter"
+GREETD_EOF
+
+# --- Create session launch script ---
+cat > /usr/local/bin/bnos-session << 'SESSION_EOF'
+#!/bin/sh
+# BNOS Wayland Session Launcher
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=BNOS
+export MOZ_ENABLE_WAYLAND=1
+export QT_QPA_PLATFORM=wayland
+
+exec labwc
+SESSION_EOF
+chmod +x /usr/local/bin/bnos-session
+
+# --- Create .desktop session entry for display managers ---
+mkdir -p /usr/share/wayland-sessions
+cat > /usr/share/wayland-sessions/bnos.desktop << 'DESKTOP_EOF'
+[Desktop Entry]
+Name=BNOS
+Comment=BlazeNeuro Operating System
+Exec=/usr/local/bin/bnos-session
+Type=Application
+DesktopNames=BNOS
+DESKTOP_EOF
+
+# --- Enable greetd service ---
+systemctl enable greetd.service 2>/dev/null || true
+
+# --- Set default locale ---
+echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+locale-gen
+update-locale LANG=en_US.UTF-8
+
+# --- Create live user ---
+if ! id -u user > /dev/null 2>&1; then
+    useradd -m -G sudo,audio,video,plugdev,netdev -s /bin/bash user
+    echo "user:live" | chpasswd
+fi
+
+echo "BNOS: Branding applied successfully."
