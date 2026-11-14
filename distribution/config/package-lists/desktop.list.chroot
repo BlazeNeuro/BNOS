@@ -8,7 +8,6 @@ wlr-randr
 
 # --- Session / login manager ---
 greetd
-greetd-agreety
 
 # --- Terminal ---
 foot
