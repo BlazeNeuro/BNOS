@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../../design-system/bnos-ui"
+import BNOS.Core 1.0
 
 Item {
     id: root
@@ -27,6 +28,13 @@ Item {
             anchors.fill: parent
             onClicked: root.closeRequested()
         }
+    }
+
+    // C++ App Backend Model
+    AppModel {
+        id: cppAppModel
+        filterText: searchInput.text
+        categoryFilter: categoryTabs.model[categoryTabs.currentIndex]
     }
 
     // Modal Launcher Container
@@ -59,9 +67,8 @@ Item {
                     placeholderText: "Search apps, commands, files..."
                     iconName: "search"
                     onAccepted: {
-                        if (filteredApps.count > 0) {
-                            var app = filteredApps.get(0)
-                            root.appLaunched(app.name, app.cmd)
+                        if (cppAppModel.count > 0) {
+                            cppAppModel.launch(0)
                             root.closeRequested()
                         }
                     }
@@ -80,12 +87,12 @@ Item {
                 id: categoryTabs
                 Layout.fillWidth: true
                 model: ["All Apps", "System", "Productivity", "Development"]
-                onTabSelected: {
-                    filterModel()
+                onTabSelected: function(index) {
+                    cppAppModel.categoryFilter = categoryTabs.model[index]
                 }
             }
 
-            // Apps Grid
+            // Apps Grid driven by C++ AppModel
             GridView {
                 id: appsGrid
                 Layout.fillWidth: true
@@ -94,7 +101,7 @@ Item {
                 cellWidth: appsGrid.width / 4
                 cellHeight: 110
 
-                model: ListModel { id: filteredApps }
+                model: cppAppModel
 
                 delegate: Rectangle {
                     width: appsGrid.cellWidth - 12
@@ -120,7 +127,7 @@ Item {
 
                             BIcon {
                                 anchors.centerIn: parent
-                                name: model.icon
+                                name: model.icon || "grid"
                                 size: 22
                                 color: Theme.brandPrimary
                             }
@@ -145,7 +152,8 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            root.appLaunched(model.name, model.cmd)
+                            cppAppModel.launch(index)
+                            root.appLaunched(model.name, model.exec)
                             root.closeRequested()
                         }
                     }
@@ -154,7 +162,7 @@ Item {
 
             BSeparator { Layout.fillWidth: true }
 
-            // Bottom Bar: Brand & Power controls
+            // Bottom Bar: Brand & C++ Power Controls
             RowLayout {
                 Layout.fillWidth: true
 
@@ -200,6 +208,7 @@ Item {
                         onClicked: {
                             root.closeRequested()
                             root.restartRequested()
+                            if (typeof SystemManager !== "undefined") SystemManager.reboot()
                         }
                     }
 
@@ -211,6 +220,7 @@ Item {
                         onClicked: {
                             root.closeRequested()
                             root.powerOffRequested()
+                            if (typeof SystemManager !== "undefined") SystemManager.powerOff()
                         }
                     }
                 }
@@ -218,44 +228,10 @@ Item {
         }
     }
 
-    // App Database
-    ListModel {
-        id: allAppsModel
-        ListElement { name: "Terminal"; cmd: "foot"; icon: "terminal"; category: "Development" }
-        ListElement { name: "File Manager"; cmd: "thunar"; icon: "folder"; category: "System" }
-        ListElement { name: "Settings"; cmd: "bnos-settings"; icon: "settings"; category: "System" }
-        ListElement { name: "Web Browser"; cmd: "firefox-esr"; icon: "fire"; category: "Productivity" }
-        ListElement { name: "System Monitor"; cmd: "foot -e htop"; icon: "cpu"; category: "System" }
-        ListElement { name: "Display Settings"; cmd: "wlr-randr"; icon: "monitor"; category: "System" }
-    }
-
-    function filterModel() {
-        filteredApps.clear()
-        var cat = categoryTabs.model[categoryTabs.currentIndex]
-        var q = searchInput.text.toLowerCase()
-
-        for (var i = 0; i < allAppsModel.count; ++i) {
-            var item = allAppsModel.get(i)
-            var matchesCat = (cat === "All Apps" || item.category === cat)
-            var matchesQuery = (q === "" || item.name.toLowerCase().indexOf(q) !== -1 || item.cmd.toLowerCase().indexOf(q) !== -1)
-
-            if (matchesCat && matchesQuery) {
-                filteredApps.append(item)
-            }
-        }
-    }
-
     onOpenChanged: {
         if (open) {
-            filterModel()
+            cppAppModel.reload()
             searchInput.input.forceActiveFocus()
-        }
-    }
-
-    Connections {
-        target: searchInput
-        function onTextEdited() {
-            root.filterModel()
         }
     }
 }

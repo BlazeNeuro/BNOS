@@ -195,6 +195,14 @@ Rectangle {
                                     Text { text: "Debian 13 (Trixie) Stable"; color: Theme.foreground; font.pixelSize: Theme.fontSm; font.weight: Font.Medium }
                                 }
                                 RowLayout {
+                                    Text { text: "Kernel:"; color: Theme.mutedForeground; font.pixelSize: Theme.fontSm; Layout.preferredWidth: 140 }
+                                    Text { text: (typeof SystemManager !== "undefined") ? SystemManager.kernelVersion : "Linux 6.x"; color: Theme.foreground; font.pixelSize: Theme.fontSm; font.weight: Font.Medium }
+                                }
+                                RowLayout {
+                                    Text { text: "Uptime:"; color: Theme.mutedForeground; font.pixelSize: Theme.fontSm; Layout.preferredWidth: 140 }
+                                    Text { text: (typeof SystemManager !== "undefined") ? SystemManager.uptimeString : "0m"; color: Theme.foreground; font.pixelSize: Theme.fontSm; font.weight: Font.Medium }
+                                }
+                                RowLayout {
                                     Text { text: "Desktop Shell:"; color: Theme.mutedForeground; font.pixelSize: Theme.fontSm; Layout.preferredWidth: 140 }
                                     Text { text: "BNOS Shell (Qt 6.4+ / QML)"; color: Theme.foreground; font.pixelSize: Theme.fontSm; font.weight: Font.Medium }
                                 }

@@ -16,9 +16,9 @@ Rectangle {
     signal settingsClicked()
 
     property int activeWorkspace: 1
-    property int batteryLevel: 85
-    property bool wifiConnected: true
-    property int volumeLevel: 70
+    property int batteryLevel: (typeof PowerManager !== "undefined") ? PowerManager.batteryPercentage : 85
+    property bool wifiConnected: (typeof NetworkManager !== "undefined") ? NetworkManager.connected : true
+    property int volumeLevel: (typeof AudioController !== "undefined") ? AudioController.volume : 70
     property int unreadNotifications: 3
 
     RowLayout {

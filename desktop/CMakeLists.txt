@@ -7,30 +7,36 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Quick Qml)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Quick Qml DBus)
 
 set(SOURCES
     src/main.cpp
-)
-
-set(QML_FILES
-    qml/AppWindow.qml
-    qml/Shell.qml
-    qml/panel/Panel.qml
-    qml/launcher/Launcher.qml
-    qml/controlcenter/ControlCenter.qml
-    qml/notifications/NotificationCenter.qml
-    qml/lockscreen/LockScreen.qml
-    qml/settings/SettingsApp.qml
+    src/models/AppModel.hpp
+    src/models/AppModel.cpp
+    src/services/SystemManager.hpp
+    src/services/SystemManager.cpp
+    src/services/PowerManager.hpp
+    src/services/PowerManager.cpp
+    src/services/NetworkManager.hpp
+    src/services/NetworkManager.cpp
+    src/services/AudioController.hpp
+    src/services/AudioController.cpp
 )
 
 qt_add_executable(bnos-shell ${SOURCES})
+
+target_include_directories(bnos-shell PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/models
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services
+)
 
 target_link_libraries(bnos-shell PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Quick
     Qt6::Qml
+    Qt6::DBus
 )
 
 install(TARGETS bnos-shell DESTINATION bin)

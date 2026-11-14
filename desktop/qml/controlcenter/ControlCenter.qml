@@ -16,7 +16,7 @@ Item {
     property bool nightLightEnabled: false
     property bool dndEnabled: false
 
-    property int volumeValue: 70
+    property int volumeValue: (typeof AudioController !== "undefined") ? AudioController.volume : 70
     property int brightnessValue: 85
 
     anchors.fill: parent
