@@ -3,11 +3,14 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../design-system/bnos-ui"
 import "panel"
+import "dock"
 import "launcher"
 import "controlcenter"
 import "notifications"
 import "lockscreen"
 import "settings"
+import "../../apps/bnos-files/qml"
+import "../../apps/bnos-store/qml"
 
 Rectangle {
     id: root
@@ -22,6 +25,8 @@ Rectangle {
     property bool controlCenterOpen: false
     property bool notificationsOpen: false
     property bool settingsOpen: false
+    property bool filesOpen: false
+    property bool storeOpen: false
     property bool isLocked: false
 
     // ================= Desktop Wallpaper Background =================
@@ -113,6 +118,81 @@ Rectangle {
         }
     }
 
+    // ================= Running App Window: File Manager =================
+    Rectangle {
+        id: filesWindowContainer
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 60, 940)
+        height: Math.min(parent.height - 100, 620)
+        radius: Theme.radiusXl
+        color: "transparent"
+        visible: root.filesOpen && !root.isLocked
+
+        FileManagerApp {
+            anchors.fill: parent
+            onCloseRequested: root.filesOpen = false
+        }
+    }
+
+    // ================= Running App Window: Software Store =================
+    Rectangle {
+        id: storeWindowContainer
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 60, 940)
+        height: Math.min(parent.height - 100, 620)
+        radius: Theme.radiusXl
+        color: "transparent"
+        visible: root.storeOpen && !root.isLocked
+
+        SoftwareStoreApp {
+            anchors.fill: parent
+            onCloseRequested: root.storeOpen = false
+        }
+    }
+
+    // ================= macOS / Ubuntu Style Bottom Dock =================
+    Dock {
+        id: bottomDock
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 14
+        anchors.horizontalCenter: parent.horizontalCenter
+        visible: !root.isLocked
+
+        filesRunning: root.filesOpen
+        storeRunning: root.storeOpen
+        settingsRunning: root.settingsOpen
+
+        onToggleLauncher: {
+            root.controlCenterOpen = false
+            root.notificationsOpen = false
+            root.launcherOpen = !root.launcherOpen
+        }
+        onOpenFiles: {
+            root.filesOpen = true
+            root.launcherOpen = false
+        }
+        onOpenBrowser: {
+            toast.show("Web Browser", "Launching Firefox ESR...", "globe")
+            if (typeof SystemManager !== "undefined") {
+                SystemManager.launchCommand("firefox-esr")
+            }
+        }
+        onOpenStore: {
+            root.storeOpen = true
+            root.launcherOpen = false
+        }
+        onOpenTerminal: {
+            toast.show("Terminal", "Launching Foot Terminal...", "terminal")
+            if (typeof SystemManager !== "undefined") {
+                SystemManager.launchCommand("foot")
+            }
+        }
+        onOpenSettings: {
+            root.settingsOpen = true
+            root.launcherOpen = false
+        }
+    }
+
     // ================= Floating Launcher Overlay =================
     Launcher {
         id: launcherOverlay
@@ -124,6 +204,13 @@ Rectangle {
         onAppLaunched: function(appName, cmd) {
             if (cmd === "bnos-settings") {
                 root.settingsOpen = true
+            } else if (cmd === "bnos-files" || cmd === "thunar") {
+                root.filesOpen = true
+            } else if (cmd === "bnos-store") {
+                root.storeOpen = true
+            } else if (typeof SystemManager !== "undefined") {
+                SystemManager.launchCommand(cmd)
+                toast.show("Launched " + appName, "Command: " + cmd, "terminal")
             } else {
                 toast.show("Launched " + appName, "Command: " + cmd, "terminal")
             }
@@ -173,6 +260,8 @@ Rectangle {
             if (root.controlCenterOpen) { root.controlCenterOpen = false; event.accepted = true; return }
             if (root.notificationsOpen) { root.notificationsOpen = false; event.accepted = true; return }
             if (root.settingsOpen) { root.settingsOpen = false; event.accepted = true; return }
+            if (root.filesOpen) { root.filesOpen = false; event.accepted = true; return }
+            if (root.storeOpen) { root.storeOpen = false; event.accepted = true; return }
         }
 
         // Ctrl+Alt+L: Lock

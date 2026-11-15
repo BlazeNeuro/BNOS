@@ -29,6 +29,7 @@ public:
     Q_INVOKABLE void reboot();
     Q_INVOKABLE void suspend();
     Q_INVOKABLE void lockSession();
+    Q_INVOKABLE void launchCommand(const QString &command);
 
 signals:
     void uptimeChanged();

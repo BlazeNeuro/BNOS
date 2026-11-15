@@ -21,6 +21,10 @@ set(SOURCES
     src/services/NetworkManager.cpp
     src/services/AudioController.hpp
     src/services/AudioController.cpp
+    ../apps/bnos-files/src/models/FileManagerModel.hpp
+    ../apps/bnos-files/src/models/FileManagerModel.cpp
+    ../apps/bnos-store/src/services/SoftwareManager.hpp
+    ../apps/bnos-store/src/services/SoftwareManager.cpp
 )
 
 qt_add_executable(bnos-shell ${SOURCES})
@@ -29,6 +33,8 @@ target_include_directories(bnos-shell PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/models
     ${CMAKE_CURRENT_SOURCE_DIR}/src/services
+    ${CMAKE_CURRENT_SOURCE_DIR}/../apps/bnos-files/src/models
+    ${CMAKE_CURRENT_SOURCE_DIR}/../apps/bnos-store/src/services
 )
 
 target_link_libraries(bnos-shell PRIVATE

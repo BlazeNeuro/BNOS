@@ -1,7 +1,16 @@
 #!/bin/sh
 set -e
 
-echo "BNOS: Applying branding..."
+echo "BNOS: Applying branding and desktop shell configuration..."
+
+# --- Configure system environment & cursor theme ---
+cat > /etc/environment << 'ENV_EOF'
+XCURSOR_THEME=Adwaita
+XCURSOR_SIZE=24
+QT_QPA_PLATFORM=wayland
+GDK_BACKEND=wayland
+MOZ_ENABLE_WAYLAND=1
+ENV_EOF
 
 # --- Configure greetd for auto-login in live mode ---
 mkdir -p /etc/greetd
@@ -13,7 +22,7 @@ vt = 7
 command = "agreety --cmd /usr/local/bin/bnos-session"
 user = "_greetd"
 
-# Auto-login for the live session — no password prompt
+# Auto-login for the live session — straight to desktop
 [initial_session]
 command = "/usr/local/bin/bnos-session"
 user = "live"
@@ -28,6 +37,11 @@ export XDG_CURRENT_DESKTOP=BNOS
 export XDG_SESSION_DESKTOP=BNOS
 export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM=wayland
+export XCURSOR_THEME=Adwaita
+export XCURSOR_SIZE=24
+
+# Initialize standard user directories
+xdg-user-dirs-update 2>/dev/null || true
 
 exec labwc
 SESSION_EOF
@@ -44,30 +58,68 @@ Type=Application
 DesktopNames=BNOS
 DESKTOP_EOF
 
-# --- labwc autostart: launch foot terminal on session start ---
+# --- Create default user folders in /etc/skel ---
+mkdir -p /etc/skel/Desktop
+mkdir -p /etc/skel/Documents
+mkdir -p /etc/skel/Downloads
+mkdir -p /etc/skel/Music
+mkdir -p /etc/skel/Pictures
+mkdir -p /etc/skel/Videos
+mkdir -p /etc/skel/Projects
+
+# Welcome guide document
+cat > /etc/skel/Desktop/Welcome-to-BNOS.txt << 'WELCOME_EOF'
+======================================================
+  Welcome to BNOS (BlazeNeuro Operating System) 1.0
+======================================================
+Founder: Ankit | BlazeNeuro
+Base: Debian GNU/Linux 13 (Trixie)
+Desktop Shell: BNOS Shell (Qt 6 + QML, shadcn/ui design tokens, Solar Icons)
+Core Backend: High-performance C++ & D-Bus system architecture
+
+Desktop Navigation & Controls:
+  - Top Bar: Workspaces 1-4, Clock & Calendar, System Status, Control Center
+  - Bottom Dock: Applications Launcher, Files, Browser, Software Store, Terminal, Settings
+  - Super or F1: Open Application Drawer
+  - Ctrl + Alt + L: Lock Screen
+  - Esc: Close active windows and drawers
+
+Enjoy your personalized, high-performance computing experience!
+WELCOME_EOF
+cp /etc/skel/Desktop/Welcome-to-BNOS.txt /etc/skel/Documents/
+
+# --- labwc configuration ---
 mkdir -p /etc/skel/.config/labwc
+
+# labwc autostart: launches the native BNOS Shell (Panel, Dock, Wallpaper)
 cat > /etc/skel/.config/labwc/autostart << 'AUTOSTART_EOF'
 # BNOS Desktop Autostart
-# Launch a terminal so the user has something to interact with
-foot &
+if [ -x /usr/bin/bnos-shell ]; then
+    bnos-shell &
+else
+    foot &
+fi
 AUTOSTART_EOF
 chmod +x /etc/skel/.config/labwc/autostart
 
-# --- labwc environment ---
+# labwc environment
 cat > /etc/skel/.config/labwc/environment << 'ENV_EOF'
 XDG_CURRENT_DESKTOP=BNOS
 MOZ_ENABLE_WAYLAND=1
 QT_QPA_PLATFORM=wayland
+XCURSOR_THEME=Adwaita
+XCURSOR_SIZE=24
 ENV_EOF
 
-# --- labwc right-click menu ---
+# labwc right-click menu
 cat > /etc/skel/.config/labwc/menu.xml << 'MENU_EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <openbox_menu>
   <menu id="root-menu" label="BNOS">
+    <item label="Files"><action name="Execute"><command>bnos-shell</command></action></item>
     <item label="Terminal"><action name="Execute"><command>foot</command></action></item>
-    <item label="File Manager"><action name="Execute"><command>thunar</command></action></item>
     <item label="Firefox"><action name="Execute"><command>firefox-esr</command></action></item>
+    <item label="File Manager (Thunar)"><action name="Execute"><command>thunar</command></action></item>
     <separator />
     <item label="System Info"><action name="Execute"><command>foot -e fastfetch</command></action></item>
     <separator />
@@ -85,16 +137,20 @@ echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
 locale-gen
 update-locale LANG=en_US.UTF-8
 
-# --- Create live user (matches hostname=bnos username=live boot params) ---
+# --- Create live user matching boot parameters ---
 if ! id -u live > /dev/null 2>&1; then
     useradd -m -G sudo,audio,video,plugdev,netdev -s /bin/bash live
     echo "live:live" | chpasswd
+    # Copy skeleton files
+    cp -r /etc/skel/. /home/live/
+    chown -R live:live /home/live
 fi
 
-# Also ensure the legacy "user" account exists for fallback
 if ! id -u user > /dev/null 2>&1; then
     useradd -m -G sudo,audio,video,plugdev,netdev -s /bin/bash user
     echo "user:live" | chpasswd
+    cp -r /etc/skel/. /home/user/
+    chown -R user:user /home/user
 fi
 
-echo "BNOS: Branding applied successfully."
+echo "BNOS: Branding and desktop configuration applied successfully."

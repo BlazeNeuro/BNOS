@@ -33,7 +33,30 @@ jobs:
             mtools \
             debian-archive-keyring \
             ca-certificates \
-            rsync
+            rsync \
+            cmake \
+            g++ \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            libqt6dbus6
+
+      - name: Build BNOS Shell & Desktop Suite
+        run: |
+          cmake -B build-desktop -S desktop
+          cmake --build build-desktop -j$(nproc)
+          # Install bnos-shell binary into live-build chroot overlay
+          mkdir -p distribution/config/includes.chroot/usr/bin/
+          cp build-desktop/bnos-shell distribution/config/includes.chroot/usr/bin/
+          chmod +x distribution/config/includes.chroot/usr/bin/bnos-shell
+          # Install QML assets, apps, design-system, and icons into /usr/share/bnos/
+          mkdir -p distribution/config/includes.chroot/usr/share/bnos/desktop
+          mkdir -p distribution/config/includes.chroot/usr/share/bnos/apps
+          mkdir -p distribution/config/includes.chroot/usr/share/bnos/design-system
+          mkdir -p distribution/config/includes.chroot/usr/share/bnos/themes
+          cp -r desktop/qml distribution/config/includes.chroot/usr/share/bnos/desktop/
+          cp -r apps/* distribution/config/includes.chroot/usr/share/bnos/apps/
+          cp -r design-system/* distribution/config/includes.chroot/usr/share/bnos/design-system/
+          cp -r themes/* distribution/config/includes.chroot/usr/share/bnos/themes/
 
       - name: Configure live-build
         working-directory: distribution

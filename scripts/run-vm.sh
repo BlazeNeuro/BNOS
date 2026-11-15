@@ -89,8 +89,7 @@ QEMU_ARGS=(
     -netdev user,id=net0
     -device intel-hda
     -device hda-duplex
-    -usb
-    -device usb-tablet
+    -device virtio-tablet-pci
     -monitor unix:/tmp/qemu-monitor.sock,server,nowait
 )
 

@@ -1,5 +1,4 @@
-# BNOS Desktop Session (Temporary - Step 1)
-# Replaced by bnos-shell + bnos-compositor in Step 3
+# BNOS Desktop Session & Shell Environment
 
 # --- Display server / compositor ---
 labwc
@@ -9,12 +8,23 @@ wlr-randr
 # --- Session / login manager ---
 greetd
 
-# --- Terminal ---
-foot
+# --- Qt 6 Runtime & QML Modules for BNOS Shell & Apps ---
+qml6-module-qtquick
+qml6-module-qtquick-controls
+qml6-module-qtquick-layouts
+qml6-module-qtquick-templates
+qml6-module-qtquick-window
+qml6-module-qtqml
+libqt6dbus6
 
-# --- Basic GUI utilities ---
+# --- Applications ---
+foot
 thunar
 firefox-esr
+
+# --- System & XDG User Dirs ---
+xdg-user-dirs
+xdg-utils
 
 # --- Fonts ---
 fonts-inter
@@ -25,5 +35,5 @@ fonts-noto-color-emoji
 mesa-utils
 mesa-vulkan-drivers
 
-# --- GTK / theme (for third-party apps) ---
+# --- Cursor & Icons ---
 adwaita-icon-theme

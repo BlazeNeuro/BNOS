@@ -92,3 +92,10 @@ void SystemManager::lockSession()
     emit actionExecuted("Session locked");
     // Handled in shell state + logind lock if registered
 }
+
+void SystemManager::launchCommand(const QString &command)
+{
+    if (command.isEmpty()) return;
+    emit actionExecuted(QString("Launching: %1").arg(command));
+    QProcess::startDetached("/bin/sh", QStringList() << "-c" << command);
+}
