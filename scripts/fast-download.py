@@ -10,7 +10,7 @@ def get_download_url():
     cmd = [
         "curl", "-s", "-IL",
         "-H", f"Authorization: Bearer {token}",
-        "https://api.github.com/repos/BlazeNeuro/BNOS/actions/artifacts/14165670334/zip"
+        "https://api.github.com/repos/BlazeNeuro/BNOS/actions/artifacts/14168120255/zip"
     ]
     out = subprocess.check_output(cmd).decode()
     for line in out.splitlines():
