@@ -19,18 +19,37 @@ def get_download_url():
     raise RuntimeError("No redirect location found")
 
 def download_chunk(url, start, end, filepath, chunk_id, progress_tracker):
-    req = urllib.request.Request(url)
-    req.headers["Range"] = f"bytes={start}-{end}"
+    current_pos = start
+    retries = 0
+    max_retries = 30
     
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        with open(filepath, "r+b") as f:
-            f.seek(start)
-            while True:
-                buf = resp.read(65536)
-                if not buf:
-                    break
-                f.write(buf)
-                progress_tracker[chunk_id] += len(buf)
+    while current_pos <= end and retries < max_retries:
+        try:
+            req = urllib.request.Request(url)
+            req.headers["Range"] = f"bytes={current_pos}-{end}"
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                with open(filepath, "r+b") as f:
+                    f.seek(current_pos)
+                    while current_pos <= end:
+                        buf = resp.read(65536)
+                        if not buf:
+                            break
+                        f.write(buf)
+                        bytes_read = len(buf)
+                        current_pos += bytes_read
+                        progress_tracker[chunk_id] += bytes_read
+                        retries = 0 # reset on successful read
+        except Exception as e:
+            retries += 1
+            time.sleep(1.5)
+            if retries % 4 == 0:
+                try:
+                    url = get_download_url()
+                except Exception:
+                    pass
+
+    if current_pos <= end:
+        raise RuntimeError(f"Chunk {chunk_id} failed after {max_retries} retries")
 
 def main():
     dest_dir = "/media/ankit/ARCH_ROOT/tmp/bnos-iso"
@@ -46,9 +65,10 @@ def main():
 
     print(f"[*] Total size: {total_size / (1024*1024):.2f} MB")
     
-    # Pre-allocate file
-    with open(zip_path, "wb") as f:
-        f.truncate(total_size)
+    # Pre-allocate file if needed
+    if not os.path.exists(zip_path) or os.path.getsize(zip_path) != total_size:
+        with open(zip_path, "wb") as f:
+            f.truncate(total_size)
 
     num_threads = 16
     chunk_size = total_size // num_threads
@@ -56,7 +76,7 @@ def main():
     progress = [0] * num_threads
 
     start_time = time.time()
-    print(f"[*] Starting 16-thread parallel stream download...")
+    print(f"[*] Starting 16-thread resilient stream download with auto-retry...")
 
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
         for i in range(num_threads):
