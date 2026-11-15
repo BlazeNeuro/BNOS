@@ -3,7 +3,7 @@ set -e
 
 echo "BNOS: Applying branding..."
 
-# --- Configure greetd to launch labwc ---
+# --- Configure greetd for auto-login in live mode ---
 mkdir -p /etc/greetd
 cat > /etc/greetd/config.toml << 'GREETD_EOF'
 [terminal]
@@ -11,7 +11,12 @@ vt = 7
 
 [default_session]
 command = "agreety --cmd /usr/local/bin/bnos-session"
-user = "greeter"
+user = "_greetd"
+
+# Auto-login for the live session — no password prompt
+[initial_session]
+command = "/usr/local/bin/bnos-session"
+user = "live"
 GREETD_EOF
 
 # --- Create session launch script ---
@@ -20,6 +25,7 @@ cat > /usr/local/bin/bnos-session << 'SESSION_EOF'
 # BNOS Wayland Session Launcher
 export XDG_SESSION_TYPE=wayland
 export XDG_CURRENT_DESKTOP=BNOS
+export XDG_SESSION_DESKTOP=BNOS
 export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM=wayland
 
@@ -38,6 +44,39 @@ Type=Application
 DesktopNames=BNOS
 DESKTOP_EOF
 
+# --- labwc autostart: launch foot terminal on session start ---
+mkdir -p /etc/skel/.config/labwc
+cat > /etc/skel/.config/labwc/autostart << 'AUTOSTART_EOF'
+# BNOS Desktop Autostart
+# Launch a terminal so the user has something to interact with
+foot &
+AUTOSTART_EOF
+chmod +x /etc/skel/.config/labwc/autostart
+
+# --- labwc environment ---
+cat > /etc/skel/.config/labwc/environment << 'ENV_EOF'
+XDG_CURRENT_DESKTOP=BNOS
+MOZ_ENABLE_WAYLAND=1
+QT_QPA_PLATFORM=wayland
+ENV_EOF
+
+# --- labwc right-click menu ---
+cat > /etc/skel/.config/labwc/menu.xml << 'MENU_EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu>
+  <menu id="root-menu" label="BNOS">
+    <item label="Terminal"><action name="Execute"><command>foot</command></action></item>
+    <item label="File Manager"><action name="Execute"><command>thunar</command></action></item>
+    <item label="Firefox"><action name="Execute"><command>firefox-esr</command></action></item>
+    <separator />
+    <item label="System Info"><action name="Execute"><command>foot -e fastfetch</command></action></item>
+    <separator />
+    <item label="Reconfigure"><action name="Reconfigure" /></item>
+    <item label="Exit"><action name="Exit" /></item>
+  </menu>
+</openbox_menu>
+MENU_EOF
+
 # --- Enable greetd service ---
 systemctl enable greetd.service 2>/dev/null || true
 
@@ -46,7 +85,13 @@ echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
 locale-gen
 update-locale LANG=en_US.UTF-8
 
-# --- Create live user ---
+# --- Create live user (matches hostname=bnos username=live boot params) ---
+if ! id -u live > /dev/null 2>&1; then
+    useradd -m -G sudo,audio,video,plugdev,netdev -s /bin/bash live
+    echo "live:live" | chpasswd
+fi
+
+# Also ensure the legacy "user" account exists for fallback
 if ! id -u user > /dev/null 2>&1; then
     useradd -m -G sudo,audio,video,plugdev,netdev -s /bin/bash user
     echo "user:live" | chpasswd

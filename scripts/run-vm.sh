@@ -43,8 +43,11 @@ done
 
 # --- Find ISO ---
 if [ -z "$ISO_FILE" ]; then
-    # Try to find the most recent ISO in build/ then distribution/
+    # Try to find the most recent ISO in build/, distribution/, or SSD tmp/
     ISO_FILE=$(ls -1t "$PROJECT_ROOT"/build/*.iso 2>/dev/null | head -1)
+    if [ -z "$ISO_FILE" ]; then
+        ISO_FILE=$(ls -1t /media/ankit/ARCH_ROOT/tmp/bnos-iso/*.iso 2>/dev/null | head -1)
+    fi
     if [ -z "$ISO_FILE" ]; then
         ISO_FILE=$(ls -1t "$PROJECT_ROOT"/distribution/*.iso 2>/dev/null | head -1)
     fi
@@ -72,6 +75,7 @@ else
 fi
 
 # --- Build QEMU command ---
+rm -f /tmp/qemu-monitor.sock
 QEMU_CMD="qemu-system-x86_64"
 QEMU_ARGS=(
     $KVM_FLAG
@@ -87,6 +91,7 @@ QEMU_ARGS=(
     -device hda-duplex
     -usb
     -device usb-tablet
+    -monitor unix:/tmp/qemu-monitor.sock,server,nowait
 )
 
 # --- UEFI firmware ---
