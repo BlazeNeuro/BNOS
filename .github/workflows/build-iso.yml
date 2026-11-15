@@ -24,6 +24,11 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
+            build-essential \
+            ninja-build \
+            make \
+            g++ \
+            cmake \
             live-build \
             debootstrap \
             squashfs-tools \
@@ -34,15 +39,14 @@ jobs:
             debian-archive-keyring \
             ca-certificates \
             rsync \
-            cmake \
-            g++ \
             qt6-base-dev \
             qt6-declarative-dev \
-            libqt6dbus6
+            libqt6dbus6 \
+            libgl-dev
 
       - name: Build BNOS Shell & Desktop Suite
         run: |
-          cmake -B build-desktop -S desktop
+          cmake -B build-desktop -S desktop -G Ninja
           cmake --build build-desktop -j$(nproc)
           # Install bnos-shell binary into live-build chroot overlay
           mkdir -p distribution/config/includes.chroot/usr/bin/
