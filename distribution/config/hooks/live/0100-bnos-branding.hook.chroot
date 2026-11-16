@@ -12,6 +12,17 @@ GDK_BACKEND=wayland
 MOZ_ENABLE_WAYLAND=1
 ENV_EOF
 
+# --- Completely purge Plymouth and statically mask its units to eliminate boot hangs ---
+echo "BNOS: Purging Plymouth and masking lingering units..."
+apt-get purge -y plymouth plymouth-themes plymouth-label 2>/dev/null || true
+rm -rf /usr/lib/systemd/system/plymouth* /lib/systemd/system/plymouth* 2>/dev/null || true
+mkdir -p /etc/systemd/system/
+ln -sf /dev/null /etc/systemd/system/plymouth-quit-wait.service
+ln -sf /dev/null /etc/systemd/system/plymouth-start.service
+ln -sf /dev/null /etc/systemd/system/plymouth-quit.service
+ln -sf /dev/null /etc/systemd/system/plymouth-read-write.service
+ln -sf /dev/null /etc/systemd/system/getty@tty1.service
+
 # --- Configure greetd for auto-login on VT1 in live mode ---
 mkdir -p /etc/greetd
 cat > /etc/greetd/config.toml << 'GREETD_EOF'
@@ -28,17 +39,14 @@ command = "/usr/local/bin/bnos-session"
 user = "live"
 GREETD_EOF
 
-# --- Create greetd systemd override & mask conflicting text gettys ---
+# --- Greetd systemd service override ---
 mkdir -p /etc/systemd/system/greetd.service.d
 cat > /etc/systemd/system/greetd.service.d/override.conf << 'OVERRIDE_EOF'
 [Unit]
-After=
+Description=Greeter daemon
 After=systemd-user-sessions.service
 Conflicts=getty@tty1.service
 OVERRIDE_EOF
-
-systemctl mask getty@tty1.service 2>/dev/null || true
-systemctl mask plymouth-quit-wait.service plymouth-start.service plymouth-quit.service 2>/dev/null || true
 
 # --- Create session launch script ---
 cat > /usr/local/bin/bnos-session << 'SESSION_EOF'
@@ -132,7 +140,7 @@ mkdir -p /etc/skel/.config/labwc
 # labwc autostart: launches the native BNOS Shell (Panel, Dock, Wallpaper)
 cat > /etc/skel/.config/labwc/autostart << 'AUTOSTART_EOF'
 # BNOS Desktop Autostart
-for i in 1 2 3 4 5; do
+for i in 1 2 3 4 5 6 7 8 9 10; do
     if [ -n "$WAYLAND_DISPLAY" ] && [ -e "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
         break
     fi
