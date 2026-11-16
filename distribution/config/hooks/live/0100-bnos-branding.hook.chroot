@@ -12,11 +12,11 @@ GDK_BACKEND=wayland
 MOZ_ENABLE_WAYLAND=1
 ENV_EOF
 
-# --- Configure greetd for auto-login in live mode ---
+# --- Configure greetd for auto-login on VT1 in live mode ---
 mkdir -p /etc/greetd
 cat > /etc/greetd/config.toml << 'GREETD_EOF'
 [terminal]
-vt = 7
+vt = 1
 
 [default_session]
 command = "agreety --cmd /usr/local/bin/bnos-session"
@@ -39,6 +39,13 @@ export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM=wayland
 export XCURSOR_THEME=Adwaita
 export XCURSOR_SIZE=24
+
+# Ensure XDG_RUNTIME_DIR is set and has correct permissions
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    mkdir -p "$XDG_RUNTIME_DIR"
+    chmod 0700 "$XDG_RUNTIME_DIR"
+fi
 
 # Initialize standard user directories
 xdg-user-dirs-update 2>/dev/null || true
@@ -81,6 +88,7 @@ Desktop Navigation & Controls:
   - Top Bar: Workspaces 1-4, Clock & Calendar, System Status, Control Center
   - Bottom Dock: Applications Launcher, Files, Browser, Software Store, Terminal, Settings
   - Super or F1: Open Application Drawer
+  - Ctrl + Alt + T: Open Terminal
   - Ctrl + Alt + L: Lock Screen
   - Esc: Close active windows and drawers
 
@@ -88,14 +96,39 @@ Enjoy your personalized, high-performance computing experience!
 WELCOME_EOF
 cp /etc/skel/Desktop/Welcome-to-BNOS.txt /etc/skel/Documents/
 
+# --- Auto-launch into Wayland desktop if dropped onto TTY1 console ---
+cat >> /etc/skel/.profile << 'PROFILE_EOF'
+if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+    exec /usr/local/bin/bnos-session
+fi
+PROFILE_EOF
+
+cat >> /etc/skel/.bashrc << 'BASHRC_EOF'
+if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+    exec /usr/local/bin/bnos-session
+fi
+BASHRC_EOF
+
+# --- Passwordless sudo for live session ---
+mkdir -p /etc/sudoers.d
+echo "live ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/live
+chmod 0440 /etc/sudoers.d/live
+
 # --- labwc configuration ---
 mkdir -p /etc/skel/.config/labwc
 
 # labwc autostart: launches the native BNOS Shell (Panel, Dock, Wallpaper)
 cat > /etc/skel/.config/labwc/autostart << 'AUTOSTART_EOF'
 # BNOS Desktop Autostart
+for i in 1 2 3 4 5; do
+    if [ -n "$WAYLAND_DISPLAY" ] && [ -e "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
+        break
+    fi
+    sleep 0.2
+done
+
 if [ -x /usr/bin/bnos-shell ]; then
-    bnos-shell &
+    /usr/bin/bnos-shell > /tmp/bnos-shell.log 2>&1 &
 else
     foot &
 fi
@@ -110,6 +143,28 @@ QT_QPA_PLATFORM=wayland
 XCURSOR_THEME=Adwaita
 XCURSOR_SIZE=24
 ENV_EOF
+
+# labwc window rules and keybindings
+cat > /etc/skel/.config/labwc/rc.xml << 'RC_EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<labwc_config>
+  <core>
+    <decoration>server</decoration>
+    <gap>0</gap>
+  </core>
+  <windowRules>
+    <windowRule identifier="bnos-shell" serverDecoration="no" />
+  </windowRules>
+  <keyboard>
+    <default />
+    <keybind key="W-Return"><action name="Execute" command="foot" /></keybind>
+    <keybind key="C-A-t"><action name="Execute" command="foot" /></keybind>
+    <keybind key="W-e"><action name="Execute" command="thunar" /></keybind>
+    <keybind key="A-F4"><action name="Close" /></keybind>
+    <keybind key="A-Tab"><action name="NextWindow" /></keybind>
+  </keyboard>
+</labwc_config>
+RC_EOF
 
 # labwc right-click menu
 cat > /etc/skel/.config/labwc/menu.xml << 'MENU_EOF'
@@ -141,16 +196,15 @@ update-locale LANG=en_US.UTF-8
 if ! id -u live > /dev/null 2>&1; then
     useradd -m -G sudo,audio,video,plugdev,netdev -s /bin/bash live
     echo "live:live" | chpasswd
-    # Copy skeleton files
-    cp -r /etc/skel/. /home/live/
-    chown -R live:live /home/live
 fi
+cp -r /etc/skel/. /home/live/
+chown -R live:live /home/live
 
 if ! id -u user > /dev/null 2>&1; then
     useradd -m -G sudo,audio,video,plugdev,netdev -s /bin/bash user
     echo "user:live" | chpasswd
-    cp -r /etc/skel/. /home/user/
-    chown -R user:user /home/user
 fi
+cp -r /etc/skel/. /home/user/
+chown -R user:user /home/user
 
 echo "BNOS: Branding and desktop configuration applied successfully."

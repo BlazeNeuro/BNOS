@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import "../../design-system/bnos-ui"
+import "../../../design-system/bnos-ui"
 
 Item {
     id: root

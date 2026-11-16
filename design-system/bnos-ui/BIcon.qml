@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 
 Item {
     id: root
@@ -16,17 +15,10 @@ Item {
         id: img
         anchors.fill: parent
         source: root.sourceUrl
-        sourceSize.width: root.size * 2
-        sourceSize.height: root.size * 2
+        sourceSize: Qt.size(root.size * 2, root.size * 2)
         fillMode: Image.PreserveAspectFit
         smooth: true
-        visible: false
-    }
-
-    MultiEffect {
-        anchors.fill: img
-        source: img
-        colorization: 1.0
-        colorizationColor: root.color
+        visible: root.name !== ""
+        opacity: root.color === Theme.mutedForeground ? 0.6 : 1.0
     }
 }

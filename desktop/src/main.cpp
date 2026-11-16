@@ -59,6 +59,20 @@ int main(int argc, char *argv[])
     engine.addImportPath(appDir + "/../../apps");
     engine.addImportPath("/usr/lib/qt6/qml");
     engine.addImportPath("/usr/share/bnos");
+    engine.addImportPath("/usr/share/bnos/design-system");
+    engine.addImportPath("/usr/share/bnos/apps");
+
+    QObject::connect(&engine, &QQmlApplicationEngine::warnings, [](const QList<QQmlError> &warnings) {
+        for (const auto &w : warnings) {
+            std::cerr << "QML Warning: " << w.toString().toStdString() << std::endl;
+        }
+    });
+
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,
+        []() {
+            std::cerr << "CRITICAL: QML root object creation failed!" << std::endl;
+            QCoreApplication::exit(-1);
+        }, Qt::QueuedConnection);
 
     // Resolve QML entry point across development and installed production paths
     QStringList candidatePaths = {
