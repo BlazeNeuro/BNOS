@@ -19,14 +19,26 @@ cat > /etc/greetd/config.toml << 'GREETD_EOF'
 vt = 1
 
 [default_session]
-command = "agreety --cmd /usr/local/bin/bnos-session"
-user = "_greetd"
+command = "/usr/local/bin/bnos-session"
+user = "live"
 
 # Auto-login for the live session — straight to desktop
 [initial_session]
 command = "/usr/local/bin/bnos-session"
 user = "live"
 GREETD_EOF
+
+# --- Create greetd systemd override & mask conflicting text gettys ---
+mkdir -p /etc/systemd/system/greetd.service.d
+cat > /etc/systemd/system/greetd.service.d/override.conf << 'OVERRIDE_EOF'
+[Unit]
+After=
+After=systemd-user-sessions.service
+Conflicts=getty@tty1.service
+OVERRIDE_EOF
+
+systemctl mask getty@tty1.service 2>/dev/null || true
+systemctl mask plymouth-quit-wait.service plymouth-start.service plymouth-quit.service 2>/dev/null || true
 
 # --- Create session launch script ---
 cat > /usr/local/bin/bnos-session << 'SESSION_EOF'
